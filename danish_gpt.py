@@ -93,6 +93,9 @@ st.markdown("""
     <p style='text-align: center; color: #F8FAFC; font-size: 20px;'>
         Your AI-powered LinkedIn wingman — ask anything about Mohammed Danish Mustafa's profile.
     </p>
+    <p style='text-align: center; font-size: 16px; color: #94A3B8; font-style: italic;'>
+        Powered by your CV and LinkedIn content. Ready to impress.
+    </p>
 """, unsafe_allow_html=True)
 
 with st.expander("Quick instructions"):
