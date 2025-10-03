@@ -1,4 +1,4 @@
-# app.py
+# danish_gpt.py
 import streamlit as st
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from sentence_transformers import SentenceTransformer
@@ -46,7 +46,7 @@ embedder, tokenizer, gen_model = load_models()
 # -----------------------
 # Streamlit UI
 # -----------------------
-st.set_page_config(page_title="Danish-GPT — LinkedIn Chatbot", layout="centered")
+st.set_page_config(page_title="Danish-GPT", layout="centered")
 st.title("🇩🇰 Danish-GPT — Your LinkedIn chatbot")
 st.caption("Chat with your profile. No uploads needed — it's already embedded!")
 
@@ -126,8 +126,8 @@ if user_question:
                                  num_beams=2)
     answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
     st.session_state.history.append(("assistant", answer))
-    st.experimental_rerun()
 
+# Optional: show context
 with st.expander("Show which context chunks were used"):
     for i, c in enumerate(st.session_state.chunks[:10]):
         st.write(f"Chunk {i+1}: {c[:400]}{'...' if len(c)>400 else ''}")
