@@ -147,8 +147,8 @@ with st.spinner("Indexing Danish's CV and LinkedIn content..."):
 # ---------------------------
 # Streamlit UI - clean look
 # ---------------------------
-st.set_page_config(page_title="Danish-GPT", layout="centered", page_icon="🤖")
-st.markdown("<h1 style='margin-bottom:6px'>Danish-GPT — Ask about Danish</h1>", unsafe_allow_html=True)
+st.set_page_config(page_title="🇩🇰 Danish-GPT", layout="centered", page_icon="🤖")
+st.markdown("<h1 style='margin-bottom:6px'>🇩🇰 Danish-GPT — Ask about Danish</h1>", unsafe_allow_html=True)
 st.markdown("Ask me about Danish’s **skills, projects, experience, education, or certifications**. Answers come only from his CV & LinkedIn summary.")
 
 # small helper to render chat bubbles
