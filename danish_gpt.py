@@ -14,12 +14,12 @@ st.set_page_config(page_title="Danish-GPT", layout="centered")
 st.markdown("""
     <style>
     body, .main {
-        background-color: #0F172A;
-        color: #F8FAFC;
+        background: linear-gradient(to right, #fce7f3, #fbcfe8);
+        color: #1F2937;
         font-family: 'Segoe UI', sans-serif;
     }
     h1 {
-        color: #14B8A6;
+        color: #BE185D;
         text-align: center;
         font-size: 48px;
         margin-bottom: 0;
@@ -27,11 +27,11 @@ st.markdown("""
     p.subtitle {
         text-align: center;
         font-size: 20px;
-        color: #CBD5E1;
+        color: #6B7280;
         margin-top: 0;
     }
     .question-button {
-        background-color: #1E3A8A;
+        background-color: #DB2777;
         color: white;
         border: none;
         padding: 12px 20px;
@@ -41,27 +41,41 @@ st.markdown("""
         cursor: pointer;
     }
     .question-button:hover {
-        background-color: #2563EB;
+        background-color: #F472B6;
     }
     .input-box {
         text-align: center;
         margin-top: 40px;
     }
     .input-box input {
-        width: 80%;
+        width: 70%;
         padding: 12px;
         font-size: 16px;
         border-radius: 8px;
         border: none;
-        background-color: #1E293B;
-        color: #F8FAFC;
+        background-color: #FCE7F3;
+        color: #1F2937;
+    }
+    .submit-button {
+        background-color: #EC4899;
+        border: none;
+        padding: 12px;
+        border-radius: 50%;
+        font-size: 18px;
+        color: white;
+        margin-left: 10px;
+        cursor: pointer;
     }
     .response-box {
         margin-top: 40px;
-        background-color: #1E293B;
+        background-color: #F9A8D4;
         padding: 20px;
         border-radius: 10px;
-        color: #F8FAFC;
+        color: #1F2937;
+    }
+    .highlight {
+        font-weight: bold;
+        color: #BE185D;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -69,7 +83,7 @@ st.markdown("""
 # -----------------------
 # Header
 # -----------------------
-st.markdown("<h1>Danish-GPT</h1>", unsafe_allow_html=True)
+st.markdown("<h1>Welcome to Danish-GPT</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>Ask anything about Danish's projects, experience, and goals.</p>", unsafe_allow_html=True)
 
 # -----------------------
@@ -154,23 +168,31 @@ embeddings = embedder.encode(chunks, convert_to_numpy=True)
 # Preloaded Questions
 # -----------------------
 st.markdown("<div style='text-align:center;'>", unsafe_allow_html=True)
-col1, col2, col3 = st.columns(3)
-with col1:
-    if st.button("Top projects"):
+cols = st.columns(4)
+with cols[0]:
+    if st.button("What are Danish's top projects?", key="btn1"):
         st.session_state.question = "What are Danish's top projects?"
-with col2:
-    if st.button("Recent experience"):
+with cols[1]:
+    if st.button("Summarize Danish's recent experience", key="btn2"):
         st.session_state.question = "Summarize Danish's recent experience"
-with col3:
-    if st.button("Target roles"):
+with cols[2]:
+    if st.button("What roles is Danish targeting now?", key="btn3"):
         st.session_state.question = "What roles is Danish targeting now?"
+with cols[3]:
+    if st.button("Who is Danish?", key="btn4"):
+        st.session_state.question = "Who is Danish?"
 st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------
-# Input Box
+# Input Box + Submit
 # -----------------------
 st.markdown("<div class='input-box'>", unsafe_allow_html=True)
-user_input = st.text_input("Want to know more about Danish? Ask away...", key="main_input")
+col_input, col_button = st.columns([0.85, 0.15])
+with col_input:
+    user_input = st.text_input("Want to know more about Danish? Ask away...", key="main_input")
+with col_button:
+    if st.button("❤️", key="submit", help="Submit your question"):
+        st.session_state.question = user_input
 st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------
@@ -191,12 +213,5 @@ def generate_answer(question):
                                  max_new_tokens=200,
                                  do_sample=False,
                                  num_beams=2)
-    return tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-# -----------------------
-# Display Response
-# -----------------------
-query = st.session_state.get("question") or user_input
-if query:
-    answer = generate_answer(query)
-    st.markdown(f"<div class='response-box'><strong>You asked:</strong> {query}<br><br><strong>Danish-GPT:</strong> {answer}</div>", unsafe_allow_html=True)
+    raw_answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    for kw in ["Generative AI", "NLP", "Big Data", "Data Science", "LangChain", "
