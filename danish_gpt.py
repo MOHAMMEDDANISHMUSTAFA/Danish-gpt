@@ -172,8 +172,3 @@ if user_question:
                                  num_beams=2)
     answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
     st.session_state.history.append(("assistant", answer))
-
-# Optional: show context
-with st.expander("Show which context chunks were used"):
-    for i, c in enumerate(st.session_state.chunks[:10]):
-        st.write(f"Chunk {i+1}: {c[:400]}{'...' if len(c)>400 else ''}")
