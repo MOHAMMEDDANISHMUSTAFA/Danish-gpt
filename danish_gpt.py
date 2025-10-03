@@ -214,4 +214,5 @@ def generate_answer(question):
                                  do_sample=False,
                                  num_beams=2)
     raw_answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    for kw in ["Generative AI", "NLP", "Big Data", "Data Science", "LangChain"]
+    for kw in ["Generative AI", "NLP", "Big Data", "Data Science", "LangChain", "FastAPI", "Playwright"]:
+    raw_answer = raw_answer.replace(kw, f"<span class='highlight'>{kw}</span>")
