@@ -83,7 +83,52 @@ st.markdown("<h1>Welcome to Danish-GPT</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>Ask anything about Danish's projects, experience, and goals.</p>", unsafe_allow_html=True)
 
 # CV Content
-profile_text = """[PASTE YOUR FULL CV TEXT HERE — SAME AS BEFORE]"""
+profile_text = """
+MOHAMMED DANISH MUSTAFA — Data Scientist | AI Engineer | Generative AI
+Email: modamu96@gmail.com | Phone: +33 745 579 193 | Paris, France
+
+Professional Summary:
+AI & Data Scientist with hands-on experience in NLP pipelines, predictive models, and BI solutions. Skilled in LLMs, RAG, LangChain, and cloud-native deployments. Strong communicator, collaborative mindset, and passion for scalable AI products. Open to full-time roles.
+
+Core Competencies:
+LLMs, RAG, LangChain, Transformers, Knowledge Graphs, Generative AI, NLP, Python, SQL, Git, CI/CD, Snowflake, Databricks, Dataiku, Power BI, Tableau, Dash, GCP, Docker, REST APIs, FAISS, Weaviate, Playwright, FastAPI.
+
+Certifications:
+Google Cloud GenAI Leader | Neo4j Certified Professional | AWS Cloud Practitioner | AWS Solutions Architect
+
+Experience:
+• AI Developer @ SitinCloud (Jan 2025 – Present, Paris): Built LLM apps, RAG pipelines, NLP workflows, knowledge graphs, SEO automation, semantic search crawlers, teaser generation tools.
+• Data Analyst @ Modemo (Nov 2023 – Feb 2024, Nantes): Built SQL ETL pipelines, improved forecasts, delivered ML solutions.
+• Village Secretary @ Govt of Andhra Pradesh (2019–2022): Managed documentation, budgets, and program implementation.
+• Electronics Engineer @ GreenTree (2017–2019): Designed digital communication systems and IoT smart home features.
+
+Education:
+• MSc Data Analytics @ DSTI, France (Oct 2023 – Dec 2024)
+• Bachelors in Electronics & Communication @ JNTUA, India (2013–2017)
+
+LinkedIn Highlights:
+• Passionate AI engineer with expertise in RAG, LangChain, FastAPI, Playwright, vector databases, and automation.
+• Built predictive models, NLP pipelines, dashboards, simulations, and SEO tools.
+• 1,185 followers | Open to roles in Generative AI, NLP, Big Data, Data Science, and Business Analytics.
+
+Projects:
+SEO Topic Modeling & Analysis — Tools: Python, BERTopic, SentenceTransformer, UMAP, KMeans, ChromaDB, Pandas
+Developed an automated SEO topic modeling pipeline to extract, cluster, and visualize search engine content.
+Used embeddings and UMAP for semantic understanding; KMeans with silhouette score for clustering.
+Generated automated PDF/PPT reports with keyword trends. Reduced manual effort by 80%.
+
+Company Intelligence Enrichment — Tools: Python, APIs, Pandas
+Built a domain-to-metadata enrichment tool to gather structured company data without scraping.
+Automated extraction of company profiles, industry info, and metrics. Enabled fast insights for BD teams.
+
+Teaser Generation — Tools: Python, OpenAI GPT API, NLP
+Created AI-powered teaser generator for marketing-ready summaries from long documents.
+Accelerated content creation by 70–80% with high relevance and quality.
+
+Web Crawler & Browser Automation Agent — Tools: Python, Playwright, LangChain, Tor
+Built a robust agent to navigate sites, search/download papers, and handle popups/errors.
+Integrated GPT to analyze and store relevant content. Enabled large-scale automated research.
+"""
 
 # Load Models
 @st.cache_resource(show_spinner=False)
