@@ -1,226 +1,133 @@
 # app.py
 import streamlit as st
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
+import torch
 import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 import re
-import nltk
 
-# Ensure punkt is available (download quietly at runtime)
-nltk.download("punkt", quiet=True)
-from nltk import sent_tokenize
+# -----------------------
+# Helpers
+# -----------------------
+def clean_text(t):
+    t = re.sub(r'\s+', ' ', t).strip()
+    return t
 
-# ---------------------------
-# YOUR PRELOADED CV / LINKEDIN
-# ---------------------------
-DOCUMENTS = """
-Mohammed Danish Mustafa 
-Data Scientist | AI Engineer | Generative AI 
-modamu96@gmail.com | +33 745 579 193 | Paris, France 
-Linkedin | Github | Portfolio 
-
-Professional Summary 
-AI & Data Scientist with hands-on experience in developing NLP pipelines, predictive models, and business 
-intelligence solutions. Skilled in Large Language Models (LLMs), Retrieval Augmented Generation (RAG), and cloud
-native deployments. Passionate about building scalable, intelligent systems that solve real-world problems. Strong 
-communicator with a collaborative mindset and a drive for continuous learning with a passion for designing scalable 
-AI products. Actively seeking a full-time opportunity and available to start immediately. 
-
-Core Competencies 
-• AI & ML: LLMs, RAG, Lang chain, Transformers, Knowledge Graphs, Generative AI 
-• NLP: Text chunking, classification, sentiment analysis, embeddings 
-• Programming: Python (advanced), SQL, Git, CI/CD 
-• Data Platforms: Snowflake, Databricks, Dataiku 
-• Visualization: Power BI, Tableau 
-• Prototyping Tools: Dash framework 
-• Cloud & DevOps: GCP, Docker, REST APIs 
-• Other: Vectorization strategies, multi-modal data representation 
-• Certifications: Google Cloud GenAI Leader | Neo4j Certified Professional 
-
-Professional Experience 
-AI Developer, Sitincloud – Paris, France 
-Jan 2025 – Present 
-• Designed and deployed LLM-based applications using Lang chain and vector databases 
-• Implemented RAG pipelines to enhance contextual accuracy in chatbot responses 
-• Built Python-based NLP workflows for document classification and sentiment analysis 
-• Applied chunking strategies to optimize LLM input processing 
-• Created knowledge graphs to support semantic search and entity linking 
-• Integrated solutions with Snowflake and Databricks for scalable data handling 
-• Delivered insights through Power BI dashboards and custom analytics tools 
-• Developed interactive dashboards and prototypes using Dash framework to visualize AI model outputs for 
-stakeholders. 
-
-Data Analyst, Modemo – Nantes, France 
-Nov 2023 – Jan 2024 
-• Built SQL-based ETL pipelines for automated reporting and analytics across finance and operations. 
-• Improved forecast accuracy by 18% using time series models. 
-• Translated business requirements into production-ready data and ML solutions. 
-
-Education 
-• MSc Data Analytics, DSTI (France) – Oct 2023 to Nov 2024 
-• Bachelors in Electronics & Communication Engineering, JNTUA(India) – 2013 to 2017
-
-LinkedIn Summary:
-Hi, I’m Danish, a passionate AI engineer with a strong background in data analytics and hands-on experience in building intelligent, scalable, and automated systems. I recently completed my Master’s in Data Analytics at Data ScienceTech Institute (DSTI), France, and have worked on impactful AI projects at SitInCloud, focusing on generative AI, automation, and data-driven solutions.
-
-Expertise:
-- Developing RAG pipelines for knowledge retrieval and intelligent Q&A systems
-- Designing AI agents and modular workflows with LangChain
-- Deploying AI microservices with FastAPI
-- Implementing web automation with Playwright
-- Leveraging vector databases (FAISS, Weaviate) for semantic search
-- Automating SEO workflows and creating custom NLP-based solutions
-
-Projects & Highlights:
-- SEO Topic Modeling & Analysis (Python, BERTopic, UMAP, ChromaDB) — automated PDF/PowerPoint reports, reduced manual reporting effort by 80%.
-- Company Intelligence Enrichment — domain-to-metadata enrichment tool.
-- Teaser Generation — AI-powered teaser generation tool (OpenAI API, LangChain).
-- Web Crawler & Browser Automation Agent — Playwright, LangChain, Tor.
-
-Other roles: Village Secretary (Govt. of Andhra Pradesh), Electronics Engineer (GreenTree Tech).
-Languages: English (Native/bilingual), French (Elementary), Hindi, Urdu.
-Certifications: Google Cloud GenAI Leader (Jul 2025), Neo4j Certified Professional (Jul 2024).
-"""
-
-# ---------------------------
-# Utility: chunking + cleaning
-# ---------------------------
-def clean_text(t: str) -> str:
-    return re.sub(r'\s+', ' ', t).strip()
-
-def chunk_text(text: str, max_chars: int = 800, overlap: int = 200):
+def chunk_text(text, max_chars=1000, overlap=200):
     text = text.strip()
     if not text:
         return []
     chunks = []
     start = 0
-    L = len(text)
-    while start < L:
-        end = min(L, start + max_chars)
-        chunk = text[start:end].strip()
-        chunks.append(chunk)
+    length = len(text)
+    while start < length:
+        end = start + max_chars
+        chunk = text[start:end]
+        chunks.append(chunk.strip())
         start = end - overlap
         if start < 0:
             start = 0
     return chunks
 
-# ---------------------------
-# Load embedding model once
-# ---------------------------
+# -----------------------
+# Model loading (cached)
+# -----------------------
 @st.cache_resource(show_spinner=False)
-def load_embedder():
-    return SentenceTransformer("all-MiniLM-L6-v2")
+def load_models():
+    embedder = SentenceTransformer("all-MiniLM-L6-v2")
+    tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-small")
+    gen_model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-small")
+    gen_model.to(torch.device("cpu"))
+    return embedder, tokenizer, gen_model
 
-embedder = load_embedder()
+embedder, tokenizer, gen_model = load_models()
 
-# ---------------------------
-# Preprocess doc: chunks & sentence embeddings
-# ---------------------------
-@st.cache_data(show_spinner=False)
-def index_document(text: str, max_chars=800, overlap=200):
-    text = clean_text(text)
-    chunks = chunk_text(text, max_chars=max_chars, overlap=overlap)
-    # map chunk -> sentences
-    sentences = []
-    sentence_chunk_map = []  # sentence index -> chunk index
-    for i, c in enumerate(chunks):
-        sents = sent_tokenize(c)
-        for s in sents:
-            s_clean = clean_text(s)
-            if s_clean:
-                sentences.append(s_clean)
-                sentence_chunk_map.append(i)
-    # embeddings
-    chunk_embeddings = embedder.encode(chunks, convert_to_numpy=True, show_progress_bar=False)
-    sentence_embeddings = embedder.encode(sentences, convert_to_numpy=True, show_progress_bar=False)
-    return {
-        "chunks": chunks,
-        "chunk_embeddings": chunk_embeddings,
-        "sentences": sentences,
-        "sentence_embeddings": sentence_embeddings,
-        "sentence_chunk_map": sentence_chunk_map,
-    }
+# -----------------------
+# Streamlit UI
+# -----------------------
+st.set_page_config(page_title="Danish-GPT — LinkedIn Chatbot", layout="centered")
+st.title("🇩🇰 Danish-GPT — Your LinkedIn chatbot")
+st.caption("Chat with your profile. No uploads needed — it's already embedded!")
 
-with st.spinner("Indexing Danish's CV and LinkedIn content..."):
-    index = index_document(DOCUMENTS, max_chars=800, overlap=200)
+with st.expander("Quick instructions"):
+    st.write("""
+    This chatbot is powered by your CV and LinkedIn content.  
+    Ask questions about your experience, skills, or projects — Danish-GPT will answer using only your profile data.  
+    Deploy this on Streamlit Cloud and link it in your LinkedIn Featured section!
+    """)
 
-# ---------------------------
-# Streamlit UI - clean look
-# ---------------------------
-st.set_page_config(page_title="🇩🇰 Danish-GPT", layout="centered", page_icon="🤖")
-st.markdown("<h1 style='margin-bottom:6px'>🇩🇰 Danish-GPT — Ask about Danish</h1>", unsafe_allow_html=True)
-st.markdown("Ask me about Danish’s **skills, projects, experience, education, or certifications**. Answers come only from his CV & LinkedIn summary.")
+# Preloaded profile text
+profile_text = """
+MOHAMMED DANISH MUSTAFA — Data Scientist | AI Engineer | Generative AI
+Email: modamu96@gmail.com | Phone: +33 745 579 193 | Paris, France
 
-# small helper to render chat bubbles
-def user_bubble(text):
-    st.markdown(f"<div style='background:#e6f2ff;padding:10px;border-radius:10px;margin:8px 0'><b>You:</b> {text}</div>", unsafe_allow_html=True)
+Professional Summary:
+AI & Data Scientist with hands-on experience in NLP pipelines, predictive models, and BI solutions. Skilled in LLMs, RAG, LangChain, and cloud-native deployments. Strong communicator, collaborative mindset, and passion for scalable AI products. Open to full-time roles.
 
-def bot_bubble(text):
-    st.markdown(f"<div style='background:#f1f1f1;padding:12px;border-radius:10px;margin:8px 0'><b>Danish-GPT:</b> {text}</div>", unsafe_allow_html=True)
+Core Competencies:
+LLMs, RAG, LangChain, Transformers, Knowledge Graphs, Generative AI, NLP, Python, SQL, Git, CI/CD, Snowflake, Databricks, Dataiku, Power BI, Tableau, Dash, GCP, Docker, REST APIs, FAISS, Weaviate, Playwright, FastAPI.
 
-# initialize session state
+Certifications:
+Google Cloud GenAI Leader | Neo4j Certified Professional | AWS Cloud Practitioner | AWS Solutions Architect
+
+Experience:
+• AI Developer @ SitinCloud (Jan 2025 – Present, Paris): Built LLM apps, RAG pipelines, NLP workflows, knowledge graphs, SEO automation, semantic search crawlers, teaser generation tools.
+• Data Analyst @ Modemo (Nov 2023 – Feb 2024, Nantes): Built SQL ETL pipelines, improved forecasts, delivered ML solutions.
+• Village Secretary @ Govt of Andhra Pradesh (2019–2022): Managed documentation, budgets, and program implementation.
+• Electronics Engineer @ GreenTree (2017–2019): Designed digital communication systems and IoT smart home features.
+
+Education:
+• MSc Data Analytics @ DSTI, France (Oct 2023 – Dec 2024)
+• Bachelors in Electronics & Communication @ JNTUA, India (2013–2017)
+
+LinkedIn Highlights:
+• Passionate AI engineer with expertise in RAG, LangChain, FastAPI, Playwright, vector databases, and automation.
+• Built predictive models, NLP pipelines, dashboards, simulations, and SEO tools.
+• 1,185 followers | Open to roles in Generative AI, NLP, Big Data, Data Science, and Business Analytics.
+"""
+
+# Indexing
+max_chars = 1000
+overlap = 200
+top_k = 3
+chunks = chunk_text(clean_text(profile_text), max_chars=max_chars, overlap=overlap)
+embeddings = embedder.encode(chunks, show_progress_bar=False, convert_to_numpy=True)
+st.session_state.chunks = chunks
+st.session_state.embeddings = embeddings
+st.session_state.indexed = True
+
+# Chat
 if "history" not in st.session_state:
-    st.session_state.history = []  # list of tuples (role, text, sources_list)
+    st.session_state.history = []
 
-# input form
-with st.form(key="ask_form", clear_on_submit=True):
-    query = st.text_input("Type your question about Danish (e.g., 'What ML projects has he done?')", max_chars=300)
-    submitted = st.form_submit_button("Ask Danish-GPT")
+st.header("Chat with Danish-GPT")
+for role, text in st.session_state.history:
+    st.markdown(f"**{'You' if role == 'user' else 'Danish-GPT'}:** {text}")
 
-# answering logic (extractive)
-def answer_query(query_text: str, top_sentences: int = 5, sim_threshold: float = 0.35):
-    q_emb = embedder.encode([query_text], convert_to_numpy=True)[0]
-    # sentence-level similarity
-    sims = cosine_similarity([q_emb], index["sentence_embeddings"])[0]
-    # get top sentence indices
-    top_idx = np.argsort(sims)[::-1][:top_sentences]
-    top_scores = sims[top_idx]
-    # if top score too low, no reliable answer
-    if top_scores.size == 0 or top_scores[0] < sim_threshold:
-        return "I don't know the answer from Danish's CV/LinkedIn. Try asking about skills, projects, or certifications.", []
-    selected_sentences = []
-    used_chunks = set()
-    for idx, score in zip(top_idx, top_scores):
-        if score < sim_threshold:
-            continue
-        sent = index["sentences"][int(idx)]
-        if sent not in selected_sentences:
-            selected_sentences.append(sent)
-            used_chunks.add(index["sentence_chunk_map"][int(idx)])
-    # Join sentences into a concise answer (preserve order as in doc)
-    # Sort selected_sentences by their order in the document
-    # Find their indices to sort
-    ordered = sorted(selected_sentences, key=lambda s: index["sentences"].index(s))
-    answer = " ".join(ordered)
-    # clamp length
-    if len(answer) > 900:
-        answer = answer[:900].rsplit(".", 1)[0] + "."
-    return answer, sorted(list(used_chunks))
+user_question = st.chat_input("Ask something about my profile / experience...")
+if user_question:
+    st.session_state.history.append(("user", user_question))
+    q_emb = embedder.encode([user_question], convert_to_numpy=True)[0]
+    sims = cosine_similarity([q_emb], st.session_state.embeddings)[0]
+    top_idx = np.argsort(sims)[::-1][:top_k]
+    retrieved_chunks = [st.session_state.chunks[i] for i in top_idx]
+    context_text = "\n\n---\n\n".join([f"Context {i+1}:\n{c}" for i, c in enumerate(retrieved_chunks)])
+    prompt = (
+        "You are Danish-GPT, an assistant that must answer ONLY using the provided context below. "
+        "If the answer is not contained in the context, be honest and say you don't know. Keep answers concise and professional.\n\n"
+        f"CONTEXT:\n{context_text}\n\nQUESTION: {user_question}\n\nANSWER:"
+    )
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=1024)
+    outputs = gen_model.generate(input_ids=inputs.input_ids,
+                                 attention_mask=inputs.attention_mask,
+                                 max_new_tokens=200,
+                                 do_sample=False,
+                                 num_beams=2)
+    answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    st.session_state.history.append(("assistant", answer))
+    st.experimental_rerun()
 
-# handle submission
-if submitted and query:
-    st.session_state.history.append(("user", query, []))
-    with st.spinner("Fetching answer..."):
-        ans, sources = answer_query(query, top_sentences=6, sim_threshold=0.32)
-    st.session_state.history.append(("assistant", ans, sources))
-
-# render chat history
-for role, text, sources in st.session_state.history:
-    if role == "user":
-        user_bubble(text)
-    else:
-        bot_bubble(text)
-        # show sources small
-        if sources:
-            chunk_preview = []
-            for c in sources:
-                short = index["chunks"][c][:350]
-                chunk_preview.append(f"• Chunk {c+1}: {short}{'...' if len(index['chunks'][c])>350 else ''}")
-            with st.expander("Show source chunks used for this answer"):
-                for p in chunk_preview:
-                    st.markdown(p)
-
-# footer / tips
-st.markdown("---")
-st.markdown("**Tips:** Try questions like _'What AI tools does Danish use?'_, _'Tell me about his SitinCloud role'_, or _'Which certifications does he have?'_")
-st.caption("This assistant answers strictly from the uploaded CV & LinkedIn text. If it can't find an answer, it will say so.")
+with st.expander("Show which context chunks were used"):
+    for i, c in enumerate(st.session_state.chunks[:10]):
+        st.write(f"Chunk {i+1}: {c[:400]}{'...' if len(c)>400 else ''}")
