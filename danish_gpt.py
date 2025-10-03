@@ -8,6 +8,45 @@ from sklearn.metrics.pairwise import cosine_similarity
 import re
 
 # -----------------------
+# Custom Styling
+# -----------------------
+st.markdown("""
+    <style>
+    body, .main {
+        background-color: #0F172A;
+        color: #F8FAFC;
+    }
+    .stChatInput textarea {
+        background-color: #1E293B;
+        color: #F8FAFC;
+    }
+    .stTextInput, .stTextArea, .stSelectbox, .stSlider {
+        background-color: #1E293B !important;
+        color: #F8FAFC !important;
+    }
+    .stButton>button {
+        background-color: #14B8A6;
+        color: white;
+        border-radius: 5px;
+    }
+    .chat-bubble-user {
+        background-color: #1E40AF;
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        color: white;
+    }
+    .chat-bubble-bot {
+        background-color: #334155;
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        color: white;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# -----------------------
 # Helpers
 # -----------------------
 def clean_text(t):
@@ -47,8 +86,14 @@ embedder, tokenizer, gen_model = load_models()
 # Streamlit UI
 # -----------------------
 st.set_page_config(page_title="Danish-GPT", layout="centered")
-st.title("🇩🇰 Danish-GPT — Your LinkedIn chatbot")
-st.caption("Chat with your profile. No uploads needed — it's already embedded!")
+st.markdown("""
+    <h1 style='text-align: center; color: #14B8A6; font-size: 48px; font-weight: bold;'>
+        Danish-GPT
+    </h1>
+    <p style='text-align: center; color: #F8FAFC; font-size: 20px;'>
+        Your AI-powered LinkedIn wingman — ask anything about Mohammed Danish Mustafa's profile.
+    </p>
+""", unsafe_allow_html=True)
 
 with st.expander("Quick instructions"):
     st.write("""
@@ -103,7 +148,8 @@ if "history" not in st.session_state:
 
 st.header("Chat with Danish-GPT")
 for role, text in st.session_state.history:
-    st.markdown(f"**{'You' if role == 'user' else 'Danish-GPT'}:** {text}")
+    bubble_class = "chat-bubble-user" if role == "user" else "chat-bubble-bot"
+    st.markdown(f'<div class="{bubble_class}">{text}</div>', unsafe_allow_html=True)
 
 user_question = st.chat_input("Ask something about my profile / experience...")
 if user_question:
