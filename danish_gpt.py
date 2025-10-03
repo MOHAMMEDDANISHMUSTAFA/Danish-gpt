@@ -87,23 +87,13 @@ embedder, tokenizer, gen_model = load_models()
 # -----------------------
 st.set_page_config(page_title="Danish-GPT", layout="centered")
 st.markdown("""
-    <h1 style='text-align: center; color: #14B8A6; font-size: 48px; font-weight: bold;'>
+    <h1 style='text-align: center; color: #14B8A6; font-size: 42px; font-weight: bold;'>
         Danish-GPT
     </h1>
-    <p style='text-align: center; color: #F8FAFC; font-size: 20px;'>
-        Your AI-powered LinkedIn wingman — ask anything about Mohammed Danish Mustafa's profile.
-    </p>
-    <p style='text-align: center; font-size: 16px; color: #94A3B8; font-style: italic;'>
-        Powered by your CV and LinkedIn content. Ready to impress.
+    <p style='text-align: center; color: #F8FAFC; font-size: 16px;'>
+        Ask anything about Mohammed Danish Mustafa's profile.
     </p>
 """, unsafe_allow_html=True)
-
-with st.expander("Quick instructions"):
-    st.write("""
-    This chatbot is powered by your CV and LinkedIn content.  
-    Ask questions about your experience, skills, or projects — Danish-GPT will answer using only your profile data.  
-    Deploy this on Streamlit Cloud and link it in your LinkedIn Featured section!
-    """)
 
 # Preloaded profile text
 profile_text = """
