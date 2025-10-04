@@ -92,13 +92,39 @@ def generate_answer(question):
     q_emb = embedder.encode([question], convert_to_numpy=True)
     distances, indices = index.search(q_emb, 3)
     context = "\n\n".join([chunks[i] for i in indices[0]])
-    prompt = f"You are Danish-GPT, an assistant that answers ONLY using the context below.\n\nCONTEXT:\n{context}\n\nQUESTION: {question}\n\nANSWER:"
+
+    # Better prompt formatting
+    prompt = (
+        "You are Danish-GPT, a helpful assistant that answers questions ONLY using the context below.\n\n"
+        f"CONTEXT:\n{context}\n\n"
+        f"QUESTION:\n{question}\n\n"
+        "ANSWER:"
+    )
+
+    # Tokenize and generate
     inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=1024)
-    outputs = gen_model.generate(input_ids=inputs.input_ids, attention_mask=inputs.attention_mask, max_new_tokens=200, do_sample=False, num_beams=2)
-    raw_answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    outputs = gen_model.generate(
+        input_ids=inputs.input_ids,
+        attention_mask=inputs.attention_mask,
+        max_new_tokens=300,
+        do_sample=True,
+        top_p=0.95,
+        temperature=0.7,
+        num_beams=4
+    )
+
+    raw_answer = tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
+
+    # Fallback if answer is too short
+    if len(raw_answer) < 20:
+        raw_answer = "Hmm, I couldn't find a detailed answer. Try rephrasing your question or ask about a specific project."
+
+    # Highlight keywords
     for kw in ["Generative AI", "NLP", "Big Data", "Data Science", "LangChain", "FastAPI", "Playwright"]:
         raw_answer = raw_answer.replace(kw, f"<span class='highlight'>{kw}</span>")
+
     return raw_answer, distances[0][0]
+
 
 # Display Response
 query = st.session_state.get("question")
