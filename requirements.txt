@@ -1,5 +1,6 @@
-streamlit>=1.20
-sentence-transformers>=2.2
-scikit-learn
+streamlit
+transformers
+sentence-transformers
+faiss-cpu
+torch
 numpy
-nltk
